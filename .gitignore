@@ -1,0 +1,11 @@
+node_modules/
+
+.env.local
+Thumbs.db
+.cache/
+npm-debug.log*
+.env
+.DS_Store
+build/
+*.js.map
+out/
