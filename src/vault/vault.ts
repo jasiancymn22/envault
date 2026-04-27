@@ -1,80 +1,83 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { encrypt, decrypt, serializePayload, deserializePayload } from '../crypto';
+import fs from 'fs';
 
 export interface VaultEntry {
-  environment: string;
-  encryptedAt: string;
-  data: string;
+  iv: string;
+  salt: string;
+  ciphertext: string;
+  tag: string;
 }
 
-export interface VaultFile {
+export interface VaultEnvironment {
+  [key: string]: VaultEntry;
+}
+
+export interface Vault {
   version: number;
-  entries: Record<string, VaultEntry>;
+  createdAt: string;
+  updatedAt: string;
+  environments: Record<string, VaultEnvironment>;
 }
 
-const VAULT_VERSION = 1;
-
-export function createVault(): VaultFile {
-  return { version: VAULT_VERSION, entries: {} };
-}
-
-export async function addEntry(
-  vault: VaultFile,
-  environment: string,
-  envContent: string,
-  passphrase: string
-): Promise<VaultFile> {
-  const payload = await encrypt(envContent, passphrase);
-  const serialized = serializePayload(payload);
+export function createVault(environments: string[]): Vault {
+  const now = new Date().toISOString();
+  const envMap: Record<string, VaultEnvironment> = {};
+  for (const env of environments) {
+    envMap[env] = {};
+  }
   return {
-    ...vault,
-    entries: {
-      ...vault.entries,
-      [environment]: {
-        environment,
-        encryptedAt: new Date().toISOString(),
-        data: serialized,
-      },
-    },
+    version: 1,
+    createdAt: now,
+    updatedAt: now,
+    environments: envMap,
   };
 }
 
-export async function getEntry(
-  vault: VaultFile,
+export function readVaultFile(filePath: string): Vault {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Vault file not found: ${filePath}`);
+  }
+  const raw = fs.readFileSync(filePath, 'utf-8');
+  return JSON.parse(raw) as Vault;
+}
+
+export function writeVaultFile(filePath: string, vault: Vault): void {
+  vault.updatedAt = new Date().toISOString();
+  fs.writeFileSync(filePath, JSON.stringify(vault, null, 2), 'utf-8');
+}
+
+export function removeEntry(
+  vault: Vault,
   environment: string,
-  passphrase: string
-): Promise<string> {
-  const entry = vault.entries[environment];
-  if (!entry) {
-    throw new Error(`Environment "${environment}" not found in vault`);
+  key: string
+): Vault {
+  if (!vault.environments[environment]) {
+    throw new Error(`Environment '${environment}' does not exist in vault.`);
   }
-  const payload = deserializePayload(entry.data);
-  return decrypt(payload, passphrase);
-}
-
-export function removeEntry(vault: VaultFile, environment: string): VaultFile {
-  if (!vault.entries[environment]) {
-    throw new Error(`Environment "${environment}" not found in vault`);
+  if (!vault.environments[environment][key]) {
+    throw new Error(
+      `Key '${key}' does not exist in environment '${environment}'.`
+    );
   }
-  const { [environment]: _, ...remaining } = vault.entries;
-  return { ...vault, entries: remaining };
+  delete vault.environments[environment][key];
+  return vault;
 }
 
-export function listEnvironments(vault: VaultFile): string[] {
-  return Object.keys(vault.entries);
+export function listEnvironments(vault: Vault): string[] {
+  return Object.keys(vault.environments);
 }
 
-export function readVaultFile(filePath: string): VaultFile {
-  const resolved = path.resolve(filePath);
-  if (!fs.existsSync(resolved)) {
-    return createVault();
+export function addEnvironment(vault: Vault, environment: string): Vault {
+  if (vault.environments[environment]) {
+    throw new Error(`Environment '${environment}' already exists in vault.`);
   }
-  const raw = fs.readFileSync(resolved, 'utf-8');
-  return JSON.parse(raw) as VaultFile;
+  vault.environments[environment] = {};
+  return vault;
 }
 
-export function writeVaultFile(filePath: string, vault: VaultFile): void {
-  const resolved = path.resolve(filePath);
-  fs.writeFileSync(resolved, JSON.stringify(vault, null, 2), 'utf-8');
+export function removeEnvironment(vault: Vault, environment: string): Vault {
+  if (!vault.environments[environment]) {
+    throw new Error(`Environment '${environment}' does not exist in vault.`);
+  }
+  delete vault.environments[environment];
+  return vault;
 }
