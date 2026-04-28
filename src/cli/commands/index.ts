@@ -1,9 +1,13 @@
-export { registerDiffCommand } from './diff';
+export { registerMergeCommand } from './merge';
+export { registerSetCommand } from './set';
+export { registerGetCommand } from './get';
+export { registerListCommand } from './list';
+export { registerRemoveCommand } from './remove';
+export { registerInitCommand } from './init';
 export { registerEnvCommand } from './env';
 export { registerExportCommand } from './export';
 export { registerImportCommand } from './import';
-export { registerInitCommand } from './init';
-export { registerListCommand } from './list';
-export { registerRemoveCommand } from './remove';
 export { registerRotateCommand } from './rotate';
 export { registerCopyCommand } from './copy';
+export { registerDiffCommand } from './diff';
+export { registerRenameCommand } from './rename';
