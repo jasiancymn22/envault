@@ -36,6 +36,12 @@ describe('encryption', () => {
     expect(() => decrypt(tampered, PASSWORD)).toThrow();
   });
 
+  it('throws when IV is tampered', () => {
+    const payload = encrypt(PLAINTEXT, PASSWORD);
+    const tampered = { ...payload, iv: 'ff'.repeat(payload.iv.length / 2) };
+    expect(() => decrypt(tampered, PASSWORD)).toThrow();
+  });
+
   it('serializes and deserializes payload correctly', () => {
     const payload = encrypt(PLAINTEXT, PASSWORD);
     const serialized = serializePayload(payload);
@@ -56,5 +62,13 @@ describe('encryption', () => {
     const key1 = deriveKey(PASSWORD, salt);
     const key2 = deriveKey(PASSWORD, salt);
     expect(key1.equals(key2)).toBe(true);
+  });
+
+  it('derives different keys from different salts', () => {
+    const salt1 = Buffer.from('a'.repeat(32), 'hex');
+    const salt2 = Buffer.from('b'.repeat(32), 'hex');
+    const key1 = deriveKey(PASSWORD, salt1);
+    const key2 = deriveKey(PASSWORD, salt2);
+    expect(key1.equals(key2)).toBe(false);
   });
 });
