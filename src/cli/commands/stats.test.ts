@@ -58,6 +58,20 @@ describe('computeStats', () => {
     expect(stats.keysPerEnvironment).toEqual({ staging: 2 });
   });
 
+  it('returns zero totals for a vault with no environments', async () => {
+    mockReadVaultFile.mockResolvedValue({
+      environments: {},
+    } as any);
+
+    const stats = await computeStats('.envault', 'secret');
+
+    expect(stats.totalEnvironments).toBe(0);
+    expect(stats.totalKeys).toBe(0);
+    expect(stats.sharedKeys).toEqual([]);
+    expect(stats.uniqueKeys).toEqual([]);
+    expect(stats.keysPerEnvironment).toEqual({});
+  });
+
   it('throws when decrypt fails', async () => {
     mockReadVaultFile.mockResolvedValue({
       environments: { production: { data: 'bad' } },
