@@ -27,4 +27,7 @@ registerRotateCommand(program);
 registerCopyCommand(program);
 registerDiffCommand(program);
 
-program.parse(process.argv);
+program.parseAsync(process.argv).catch((err: Error) => {
+  console.error(`Error: ${err.message}`);
+  process.exit(1);
+});
