@@ -22,6 +22,14 @@ describe('extractTemplate', () => {
     expect(template.optional).toContain('DEBUG');
     expect(template.defaults).toEqual({ DEBUG: 'false' });
   });
+
+  it('should produce an empty template for empty env data', () => {
+    const template = extractTemplate({});
+    expect(template.keys).toEqual([]);
+    expect(template.required).toEqual([]);
+    expect(template.optional).toEqual([]);
+    expect(template.defaults).toEqual({});
+  });
 });
 
 describe('generateFromTemplate', () => {
@@ -47,6 +55,17 @@ describe('generateFromTemplate', () => {
     const result = generateFromTemplate(template, { DB_HOST: 'localhost' });
     expect(result.DEBUG).toBe('false');
   });
+
+  it('should not override provided values with defaults', () => {
+    const template = {
+      keys: ['DB_HOST', 'DEBUG'],
+      required: ['DB_HOST'],
+      optional: ['DEBUG'],
+      defaults: { DEBUG: 'false' },
+    };
+    const result = generateFromTemplate(template, { DB_HOST: 'localhost', DEBUG: 'true' });
+    expect(result.DEBUG).toBe('true');
+  });
 });
 
 describe('validateAgainstTemplate', () => {
@@ -71,6 +90,17 @@ describe('validateAgainstTemplate', () => {
     const errors = validateAgainstTemplate(template, { DB_HOST: 'localhost' });
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(/API_KEY/);
+  });
+
+  it('should return errors for all missing required keys', () => {
+    const template = {
+      keys: ['DB_HOST', 'API_KEY', 'SECRET'],
+      required: ['DB_HOST', 'API_KEY', 'SECRET'],
+      optional: [],
+      defaults: {},
+    };
+    const errors = validateAgainstTemplate(template, {});
+    expect(errors).toHaveLength(3);
   });
 });
 
