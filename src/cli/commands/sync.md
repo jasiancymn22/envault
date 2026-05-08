@@ -22,6 +22,7 @@ envault sync <environment> <targetFile> [options]
 | `-p, --password <pass>` | Vault password (prompted if omitted)     |
 | `--vault <path>`        | Path to vault file (default: `.envault`) |
 | `--dry-run`             | Preview changes without writing          |
+| `--force`               | Overwrite target file without prompting  |
 
 ## Examples
 
@@ -37,10 +38,14 @@ envault sync production .env --dry-run
 
 # Use a custom vault path
 envault sync production .env --vault ./config/.envault
+
+# Overwrite an existing file without confirmation prompt
+envault sync production .env --force
 ```
 
 ## Notes
 
-- The target file will be **overwritten** with the decrypted contents.
+- The target file will be **overwritten** with the decrypted contents. You will be prompted to confirm if the file already exists, unless `--force` is passed.
 - Use `--dry-run` to preview the contents before writing.
 - Ensure the vault file exists and the environment is present before syncing.
+- The password is never stored; it is used only to decrypt the vault in memory.
